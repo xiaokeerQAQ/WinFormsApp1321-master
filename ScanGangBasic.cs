@@ -33,6 +33,7 @@ namespace BLL.Hardware.ScanGang
 
         // 日志记录方法
         private static string logFilePath = "log.txt";  // 日志文件路径
+     
 
         // 写入日志
         private static void WriteLog(string message)
@@ -122,7 +123,12 @@ namespace BLL.Hardware.ScanGang
             while (!_hasResult)
             {
                 Thread.Sleep(10);
-                if (Environment.TickCount - tick >= 1000) break;
+                if (Environment.TickCount - tick >= 1000) // 1秒超时
+                {
+                    errStr = "扫码超时";
+                    result = string.Empty;
+                    return false;
+                }
             }
             lock (_lock)
             {
@@ -195,7 +201,7 @@ namespace BLL.Hardware.ScanGang
         /// <param name="commd">触发命令</param>
         /// <param name="errStr">错误消息</param>
         /// <returns></returns>
-        private bool SendCommd(string commd, out string errStr)
+        public bool SendCommd(string commd, out string errStr)
         {
             errStr = string.Empty;
             var send = Encoding.ASCII.GetBytes(commd);

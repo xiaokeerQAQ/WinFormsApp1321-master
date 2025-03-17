@@ -57,7 +57,6 @@
             label2.Size = new Size(86, 31);
             label2.TabIndex = 1;
             label2.Text = "批次号";
-            label2.Click += label2_Click;
             // 
             // label3
             // 
@@ -73,7 +72,6 @@
             textBox1.Name = "textBox1";
             textBox1.Size = new Size(133, 23);
             textBox1.TabIndex = 3;
-            textBox1.TextChanged += textBox1_TextChanged;
             // 
             // button1
             // 

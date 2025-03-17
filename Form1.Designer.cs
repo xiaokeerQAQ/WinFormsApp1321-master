@@ -38,6 +38,11 @@
             button3 = new Button();
             label2 = new Label();
             label3 = new Label();
+            textBox1 = new TextBox();
+            textBox2 = new TextBox();
+            label4 = new Label();
+            label5 = new Label();
+            button4 = new Button();
             contextMenuStrip2.SuspendLayout();
             SuspendLayout();
             // 
@@ -124,11 +129,63 @@
             label3.Text = "检测有效期限：";
             label3.Click += label3_Click;
             // 
+            // textBox1
+            // 
+            textBox1.Location = new Point(773, 238);
+            textBox1.Name = "textBox1";
+            textBox1.Size = new Size(100, 23);
+            textBox1.TabIndex = 8;
+            // 
+            // textBox2
+            // 
+            textBox2.Location = new Point(703, 305);
+            textBox2.Name = "textBox2";
+            textBox2.Size = new Size(100, 23);
+            textBox2.TabIndex = 9;
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Font = new Font("Microsoft YaHei UI", 18F, FontStyle.Regular, GraphicsUnit.Point);
+            label4.Location = new Point(582, 234);
+            label4.Name = "label4";
+            label4.Size = new Size(158, 31);
+            label4.TabIndex = 10;
+            label4.Text = "试件当前条码";
+            label4.Click += label4_Click_1;
+            // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Font = new Font("Microsoft YaHei UI", 18F, FontStyle.Regular, GraphicsUnit.Point);
+            label5.Location = new Point(582, 299);
+            label5.Name = "label5";
+            label5.Size = new Size(86, 31);
+            label5.TabIndex = 11;
+            label5.Text = "批次号";
+            label5.Click += label5_Click;
+            // 
+            // button4
+            // 
+            button4.Font = new Font("Microsoft YaHei UI", 18F, FontStyle.Regular, GraphicsUnit.Point);
+            button4.Location = new Point(809, 296);
+            button4.Name = "button4";
+            button4.Size = new Size(75, 36);
+            button4.TabIndex = 12;
+            button4.Text = "确认";
+            button4.UseVisualStyleBackColor = true;
+            button4.Click += button4_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(896, 521);
+            Controls.Add(button4);
+            Controls.Add(label5);
+            Controls.Add(label4);
+            Controls.Add(textBox2);
+            Controls.Add(textBox1);
             Controls.Add(label3);
             Controls.Add(label2);
             Controls.Add(button3);
@@ -154,5 +211,10 @@
         private Button button3;
         private Label label2;
         private Label label3;
+        private TextBox textBox1;
+        private TextBox textBox2;
+        private Label label4;
+        private Label label5;
+        private Button button4;
     }
 }
