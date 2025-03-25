@@ -57,6 +57,7 @@ namespace BLL.Hardware.ScanGang
             Console.WriteLine($"{DateTime.Now}: {message}");
         }
 
+
         public bool Connect(string ip, int portNo, string name, out string err)
         {
             _name = name;
