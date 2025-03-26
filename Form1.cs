@@ -30,7 +30,8 @@ namespace WinFormsApp1321
             textBox1.Text = "";
             textBox2.Enabled = false;
             button4.Enabled = false;
-
+            button6.Enabled = false;
+            button8.Enabled = false;
             detectionTimer = new System.Windows.Forms.Timer();
             detectionTimer.Interval = 5000;
             detectionTimer.Tick += DetectionTimer_Tick;
@@ -66,96 +67,116 @@ namespace WinFormsApp1321
         private async void button5_Click(object sender, EventArgs e)
         {
 
-
-            bool writeSuccess = await _plcClient.WriteDRegisterAsync(2130, 2);
-
-            if (!writeSuccess)
-            {
-                // MessageBox.Show("无法写入 PLC（D2130 = 3），启动自校准失败！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                UpdateLabel8("报警信息：启动自校准失败！");
-                return;
-            }
-
-            TCPServer.Mode = true;
             SelectionForm selectionForm = new SelectionForm();
             selectionForm.ShowDialog();
-
-            if (selectionForm.DialogResult != DialogResult.OK)
+            if (selectionForm.DialogResult == DialogResult.OK)
             {
-                // MessageBox.Show("自校准模式未开启。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                //UpdateLabel8("自校准模式未开启");
-                return;
-            }
-
-            DialogResult result = MessageBox.Show(
-                $"系统文件：C:\\system\\system.ini\n" +
-                $"标样文件：{selectionForm.StandardFilePath}\n" +
-                $"标定循环次数：{selectionForm.CalibrationCount}\n" +
-                $"时间：{DateTime.Now:yyyy-MM-dd HH:mm:ss}\n\n" +
-                "放入样棒后点击确认？",
-                "放入样棒",
-                MessageBoxButtons.OKCancel,
-                MessageBoxIcon.Question
-            );
-
-            if (result == DialogResult.Cancel)
-            {
-                await _plcClient.WriteDRegisterAsync(2135, 1);
-                // MessageBox.Show("自校准模式未开启。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-
-                return;
-            }
-
-            bool sampleInserted = false;
-            while (!sampleInserted)
-            {
-                int[] response = await _plcClient.ReadDRegisterAsync(2132, 1);
-                if (response == null)
+                /*string selectedStandardFile = selectionForm.StandardFilePath;
+                totalCycles = selectionForm.CalibrationCount;
+                currentCycle = 0;*/
+                bool writeSuccess = await _plcClient.WriteDRegisterAsync(2130, 3);
+                if (writeSuccess)
                 {
-                    // MessageBox.Show("无法读取 D2132，检查 PLC 连接。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    UpdateLabel8("报警信息：无法读取D2132，检查连接");
-                    return;
-                }
-
-                if (response[0] == 1) // 扫码区有样棒
-                {
-                    // 无限等待直到 ScanAASuccessCount 和 ScanBBSuccessCount 都不为 0
-                    while (TCPServer.ScanAASuccessCount == 0 || TCPServer.ScanBBSuccessCount == 0)
-                    {
-                        await Task.Delay(100); // 每 100ms 检查一次，避免 CPU 过载
-                    }
-                    confirmWriteSuccess = await _plcClient.WriteDRegisterAsync(2132, 3);
-                    if (!confirmWriteSuccess)
-                    {
-                        // MessageBox.Show("无法通知 PLC 开始循环（D2132 = 3 失败）", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        UpdateLabel8("报警信息：无法通知PLC开启循环");
-
-                        return;
-                    }
-                    UpdateLabel8("");
-                    string selectedStandardFile = selectionForm.StandardFilePath;
-                    totalCycles = selectionForm.CalibrationCount;
-                    currentCycle = 0;
-
+                    // MessageBox.Show("无法写入 PLC（D2130 = 3），启动自校准失败！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    TCPServer.Mode = true;
+                    //校准按钮
                     isOn1 = true;
                     button5.Enabled = false;
                     button6.Enabled = true;
+                    //检测按钮
+                    button7.Enabled = false;
+                    button8.Enabled = false;
+
+
                     label1.Text = "当前状态：自校准模式";
                     label6.Text = "自校准模式运行中";
-                    cancellationTokenSource = new CancellationTokenSource();
-                    Task.Run(() => RunCalibrationLoop(selectedStandardFile, cancellationTokenSource.Token));
 
-                    sampleInserted = true;
+                    DialogResult result = MessageBox.Show(
+              //$"系统文件：C:\\system\\system.ini\n" +
+              $"标样文件：{selectionForm.StandardFilePath}\n" +
+              $"标定循环次数：{selectionForm.CalibrationCount}\n" +
+              "放入样棒后点击确认？",
+              "放入样棒",
+              MessageBoxButtons.OKCancel,
+              MessageBoxIcon.Question
+
+          );
+                    if (result == DialogResult.Cancel)
+                    {
+                        bool Success = await _plcClient.WriteDRegisterAsync(2142, 1);
+                        if (Success)
+                        {
+                            isOn1 = false;
+                            button5.Enabled = true;
+                            button6.Enabled = false;
+                            //检测按钮
+                            button7.Enabled = false;
+                            button8.Enabled = false;
+
+                            label1.Text = "当前状态：待机状态";
+                            label6.Text = "自校准模式";
+                        }
+                        // MessageBox.Show("自校准模式未开启。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                        return;
+                    }
+                    else
+                    {
+                        bool sampleInserted = false;
+                        while (!sampleInserted)
+                        {
+                            int[] response = await _plcClient.ReadDRegisterAsync(2132, 1);
+                            if (response == null)
+                            {
+                                // MessageBox.Show("无法读取 D2132，检查 PLC 连接。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                UpdateLabel8("报警信息：无法读取D2132，检查连接");
+                                return;
+                            }
+                            else if (response[0] == 1) // 扫码区有样棒
+                            {
+                                // 无限等待直到 ScanAASuccessCount 和 ScanBBSuccessCount 都不为 0
+                                while (TCPServer.ScanAASuccessCount == 0 || TCPServer.ScanBBSuccessCount == 0)
+                                {
+                                    await Task.Delay(100); // 每 100ms 检查一次，避免 CPU 过载
+                                }
+                                confirmWriteSuccess = await _plcClient.WriteDRegisterAsync(2132, 3);
+                                if (!confirmWriteSuccess)
+                                {
+                                    // MessageBox.Show("无法通知 PLC 开始循环（D2132 = 3 失败）", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                    UpdateLabel8("报警信息：无法通知PLC开启循环");
+
+                                    return;
+                                }
+                                else
+                                {
+                                    string selectedStandardFile = selectionForm.StandardFilePath;
+                                    totalCycles = selectionForm.CalibrationCount;
+                                    currentCycle = 0;
+                                    /*
+                                                                    isOn1 = true;
+                                                                    button5.Enabled = false;
+                                                                    button6.Enabled = true;
+                                                                    label1.Text = "当前状态：自校准模式";
+                                                                    label6.Text = "自校准模式运行中";*/
+
+
+                                    cancellationTokenSource = new CancellationTokenSource();
+                                    Task.Run(() => RunCalibrationLoop(selectedStandardFile, cancellationTokenSource.Token));
+
+                                    sampleInserted =true;
+                                }
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                    result = MessageBox.Show("扫码区没有样棒或待检棒，请放入样棒后点击确认。", "等待样棒", MessageBoxButtons.OKCancel);
-                    if (result == DialogResult.Cancel)
-                    {
-                        //MessageBox.Show("自校准模式未开启。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
+
+                    UpdateLabel8("报警信息：启动自校准失败！");
+                    return;
                 }
+             
+                return;
             }
         }
 
@@ -163,7 +184,7 @@ namespace WinFormsApp1321
         private async void button6_Click_1(object sender, EventArgs e)
         {
 
-            bool writeSuccess = await _plcClient.WriteDRegisterAsync(2133, 1);
+            bool writeSuccess = await _plcClient.WriteDRegisterAsync(2142, 1);
 
             if (!writeSuccess)
             {
@@ -173,11 +194,6 @@ namespace WinFormsApp1321
             }
             UpdateLabel8("");
             StopCalibration(false);
-
-            isOn1 = false;
-            button5.Enabled = true;
-            button6.Enabled = true;
-            label1.Text = "当前状态：待机状态";
         }
 
 
@@ -228,79 +244,87 @@ namespace WinFormsApp1321
         }
 
         private string lastSentBarcode = string.Empty; // 记录上次已发送的条码
+        private bool isProcessingTest = false;  // 标志位，确保每次只有一个试件在检测中
+
         private async void DetectionTimer_Tick(object sender, EventArgs e)
         {
             while (isOn)
             {
-
                 int[] response = await _plcClient.ReadDRegisterAsync(2132, 1);
 
                 if (response != null && response.Length > 0 && response[0] == 1)
                 {
-                    // 读取条码
-                    string currentBarcode = Encoding.UTF8.GetString(Form1.BarcodeBytes ?? new byte[0]);
+                    string result = string.Empty;
+                    string errStr = string.Empty;
 
-                    // 如果条码没有变，则不重复发送
-                    if (currentBarcode != lastSentBarcode)
+                    // **检查是否正在处理试件，避免重复扫码**
+                    if (isProcessingTest)
                     {
-                        await ReadAndSendBarcode();
-                        lastSentBarcode = currentBarcode; // 记录已发送的条码
+                        // 如果正在处理试件，跳过当前循环
+                        await Task.Delay(1000);  // 等待一段时间后再检查
+                        continue;
                     }
-                }
 
-
-                int[] stopSignal = await _plcClient.ReadDRegisterAsync(2144, 2);
-                if (stopSignal != null && stopSignal.Length > 0 && stopSignal[1] == 1)
-                {
-                    Console.WriteLine("检测模式手动停止...");
-                    await StopDetectionAsync();
-                    break; // 退出循环
-                }
-
-                await Task.Delay(1000);
-            }
-        }
-        private async Task ReadAndSendBarcode()
-        {
-            string result;
-            string errStr;
-            bool success = _scanGangBasic.ScanOnce(out result, out errStr);
-
-            if (success && result != "未扫描到条码")
-            {
-                // 显示条码
-                textBox2.Text = result;
-                //转换成byte数组供后台使用
-                Form1.BarcodeBytes = Encoding.UTF8.GetBytes(result);
-
-                bool writeSuccess = await _plcClient.WriteDRegisterAsync(2132, 3);
-
-                if (writeSuccess)
-                {
-                    Console.WriteLine($"条码 {result} 扫描成功！");
-
-                    // 无限等待直到 ScanAASuccessCount 和 ScanBBSuccessCount 都不为 0
-                    while (TCPServer.ScanAASuccessCount == 0 || TCPServer.ScanBBSuccessCount == 0)
+                    // **等待扫码枪成功扫描**
+                    while (true)
                     {
+                        bool success = _scanGangBasic.ScanOnce(out result, out errStr);
+                        if (success)
+                        {
+                            success = false;
+                            break; // 成功扫描到条码，跳出循环
+                        }
                         await Task.Delay(100); // 每 100ms 检查一次，避免 CPU 过载
                     }
 
-                    //  ProcessFinalTestData 进行试件判断
-                    bool isTestPassed = await CheckTestResultWithTimeout(TimeSpan.FromSeconds(20));
-                    int statusCode = isTestPassed ? 1 : 2;
+                    // **更新条码数据**
+                    Form1.BarcodeBytes = Encoding.UTF8.GetBytes(result);
 
+                    // **确保条码不重复**
+                    if (result != lastSentBarcode)
+                    {
+                        lastSentBarcode = result;
 
-                    await _plcClient.WriteDRegisterAsync(2138, statusCode);
-                    Console.WriteLine($"试件检测结果：{(isTestPassed ? "合格" : "不合格")}，已发送至 D2138。");
+                        // **等待 ScanAASuccessCount 和 ScanBBSuccessCount**
+                        while (TCPServer.ScanAASuccessCount == 0 || TCPServer.ScanBBSuccessCount == 0)
+                        {
+                            await Task.Delay(100);
+                        }
+
+                        // **开始处理试件，设置标志位**
+                        isProcessingTest = true;
+
+                        // **发送条码通知 PLC**
+                        bool writeSuccess = await _plcClient.WriteDRegisterAsync(2132, 3);
+                        if (writeSuccess)
+                        {
+                            // **试件判断**
+                            bool isTestPassed = await CheckTestResultWithoutTimeout();
+                            int statusCode = isTestPassed ? 1 : 2;
+
+                            await _plcClient.WriteDRegisterAsync(2138, statusCode);
+                            Console.WriteLine($"试件检测结果：{(isTestPassed ? "合格" : "不合格")}，已发送至 D2138。");
+                        }
+                        else
+                        {
+                            Console.WriteLine("无法向 PLC 发送扫码成功信息！");
+                        }
+
+                        // **处理完成后重置标志位**
+                        isProcessingTest = false;
+                    }
+
+                    // **检测停止信号**
+                    int[] stopSignal = await _plcClient.ReadDRegisterAsync(2144, 2);
+                    if (stopSignal != null && stopSignal.Length > 0 && stopSignal[1] == 1)
+                    {
+                        Console.WriteLine("检测模式手动停止...");
+                        await StopDetectionAsync();
+                        break; // 退出循环
+                    }
+
+                    await Task.Delay(1000);
                 }
-                else
-                {
-                    Console.WriteLine("无法向 PLC 发送扫码成功信息！");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"扫描失败：{errStr}");
             }
         }
 
@@ -332,7 +356,6 @@ namespace WinFormsApp1321
 
             while (currentCycle < totalCycles && !token.IsCancellationRequested)
             {
-                NotifyCycleStart();
 
                 if (!await WaitForTestCompletion())
                 {
@@ -341,7 +364,7 @@ namespace WinFormsApp1321
                 }
 
                 // 使用超时机制来判断测试结果是否合格
-                bool isTestPassed = await CheckTestResultWithTimeout(TimeSpan.FromSeconds(20));
+                bool isTestPassed = await CheckTestResultWithoutTimeout();
                 int registerValue = isTestPassed ? 2 : 1;
 
                 // 如果不合格，直接停止校准
@@ -401,9 +424,8 @@ namespace WinFormsApp1321
             }
         }
 
-        private async Task<bool> CheckTestResultWithTimeout(TimeSpan timeout)
+        private async Task<bool> CheckTestResultWithoutTimeout()
         {
-            // Console.WriteLine("开始检查测试结果...");
             Task<bool> task;
 
             // 根据 TCPServer.Mode 选择调用不同的方法
@@ -416,25 +438,14 @@ namespace WinFormsApp1321
                 task = Task.Run(() => _tcpServer.ProcessFinalFormalData());
             }
 
-            if (await Task.WhenAny(task, Task.Delay(timeout)) == task)
-            {
-                UpdateLabel7("");
-                // Console.WriteLine("测试结果已返回。");
-                return task.Result;
-            }
-            else
-            {
-                //Console.WriteLine("超时未接收到测试结果。");
-                // MessageBox.Show("未能在20秒内接收到样棒是否合格的结果。", "超时错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                UpdateLabel7("提示信息：未能在20秒内接收到样棒是否合格的结果");
-                return false;
-            }
+            // 一直等待任务完成，不设置超时
+            await task;
+
+            UpdateLabel7("");
+            return task.Result;
         }
 
-        private void NotifyCycleStart()
-        {
-            //MessageBox.Show($"第 {currentCycle + 1} 次校准开始！", "开始校准", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
+
 
         private async Task<bool> WaitForTestCompletion()
         {
@@ -465,58 +476,7 @@ namespace WinFormsApp1321
         }
 
 
-        /*   private async Task RunCalibrationLoop(string selectedStandardFile, CancellationToken token)
-           {
-               DateTime lastCycleEndTime = DateTime.Now;
-               string iniPath = "C:\\system\\system.ini";
-               string sampleFolder = "D:\\标样\\yangguang"; // 样管文件夹路径
-
-               int fileIndex = 1; // 样管文件索引
-
-               while (currentCycle < totalCycles)
-               {
-                   if (token.IsCancellationRequested)
-                   {
-                       MessageBox.Show("自校准任务已停止！", "停止", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                       StopCalibration();
-                       return;
-                   }
-
-                   currentCycle++;
-                   UpdateCycleLabel();
-
-                   // 生成当前循环的样管文件名
-                   string sampleFile = Path.Combine(sampleFolder, $"样管{fileIndex}.ini");
-
-                   // 检查文件是否存在
-                   if (!File.Exists(sampleFile))
-                   {
-                       MessageBox.Show($"缺少样管文件: {sampleFile}！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                       StopCalibration();
-                       return;
-                   }
-
-
-
-                   if (currentCycle >= totalCycles)
-                   {
-                       MessageBox.Show("检测完成！所有循环已执行。", "完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                       DateTime validUntil = lastCycleEndTime.AddHours(2); // 计算有效期限
-                       WriteDeadlineToIni(iniPath, validUntil); // 写入 system.ini
-                       UpdateValidUntilLabel(validUntil); // 更新 UI
-
-                       this.Invoke(new Action(() =>
-                       {
-                           button2.Enabled = true;  // 只有成功完成才启用检测模式
-                       }));
-
-                       StopCalibration(false);
-                   }
-
-                   await Task.Delay(10000, token); // 等待 10 秒，进入下一次循环
-               }
-           }*/
+      
         private void WriteDeadlineToIni(string iniPath, DateTime deadline)
         {
             try
@@ -599,6 +559,11 @@ namespace WinFormsApp1321
 
         private async void Form1_Load(object sender, EventArgs e)
         {
+            // 设置默认提示文本
+            textBox2.Text = "请输入批次号";
+            textBox2.ForeColor = Color.Gray;  // 设置提示文本颜色
+            InitializeTextBoxEvents();
+
             string iniPath = "C:\\system\\system.ini";
             DateTime deadline = ReadDeadlineFromIni(iniPath);
             if (deadline != DateTime.MinValue)
@@ -756,7 +721,13 @@ namespace WinFormsApp1321
             currentCycle = 0;
             totalCycles = 0;
             isOn1 = false;
+            button5.Enabled = true;
+            button6.Enabled = false;
+            string stopTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
+            // 写入系统文件 Deadline 部分
+            WriteStopTimeToFile(stopTime);
+            // WriteDeadlineToIni(iniPath,stopTime);
             this.Invoke(new Action(() =>
             {
                 label6.Text = "自校准模式";
@@ -766,10 +737,47 @@ namespace WinFormsApp1321
                 // 手动停止 or 异常终止，都应该禁用检测模式
                 button7.Enabled = isCalibrationSuccessful && !isManualStop;
                 button8.Enabled = isCalibrationSuccessful && !isManualStop;
-                //label3.Text = $"停止自校准时间：{DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+                label3.Text = $"停止自校准时间：{DateTime.Now:yyyy-MM-dd HH:mm:ss}";
             }));
         }
 
+        private void WriteStopTimeToFile(string stopTime)
+        {
+            string iniPath = "C:\\system\\system.ini"; // 系统文件路径
+
+            try
+            {
+                // 读取文件内容
+                var lines = File.ReadAllLines(iniPath).ToList();
+
+                bool deadlineUpdated = false;
+
+                // 遍历文件中的每一行，查找 "Deadline" 字段并更新它
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    if (lines[i].StartsWith("Deadline="))
+                    {
+                        lines[i] = $"Deadline={stopTime}";  // 更新 Deadline 值
+                        deadlineUpdated = true;
+                        break;  // 找到并更新后退出循环
+                    }
+                }
+
+                // 如果没有找到 Deadline 字段，添加一个新的字段
+                if (!deadlineUpdated)
+                {
+                    lines.Add($"Deadline={stopTime}");
+                }
+
+                // 将更新后的内容写回到文件
+                File.WriteAllLines(iniPath, lines);
+            }
+            catch (Exception ex)
+            {
+                // 如果写入失败，显示错误信息
+                MessageBox.Show($"写入系统文件失败: {ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
         private void toolStripComboBox1_Click(object sender, EventArgs e)
         {
@@ -839,7 +847,8 @@ namespace WinFormsApp1321
 
 
             string batchNumber = textBox2.Text.Trim();
-
+            BatchNumber = Encoding.UTF8.GetBytes(batchNumber);
+            detectionTimer.Start();
 
             if (string.IsNullOrWhiteSpace(batchNumber))
             {
@@ -912,8 +921,7 @@ namespace WinFormsApp1321
             if (writeSuccess)
             {
                 isOn = true;
-                button5.Enabled = false;
-                button6.Enabled = false;
+
                 button8.Enabled = true;   // 启用退出按钮
 
                 // button2.Text = "进入检测模式"; // 这个可以根据需要修改按钮文本
@@ -926,7 +934,8 @@ namespace WinFormsApp1321
                 textBox2.Enabled = true;
                 button4.Enabled = true;
 
-                detectionTimer.Start();
+
+               
 
                 UpdateLabel7(""); // 清空报警信息
             }
@@ -964,6 +973,34 @@ namespace WinFormsApp1321
                 UpdateLabel7("无法退出检测模式！");
             }
         }
+
+        // 处理文本框获取焦点事件
+        private void textBox2_Enter(object sender, EventArgs e)
+        {
+            if (textBox2.Text == "请输入批次号")
+            {
+                textBox2.Text = "";
+                textBox2.ForeColor = Color.Black;  // 设置正常输入的颜色
+            }
+        }
+
+        // 处理文本框失去焦点事件
+        private void textBox2_Leave(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(textBox2.Text))
+            {
+                textBox2.Text = "请输入批次号";
+                textBox2.ForeColor = Color.Gray;  // 恢复提示文本颜色
+            }
+        }
+
+        // 绑定事件
+        private void InitializeTextBoxEvents()
+        {
+            textBox2.Enter += textBox2_Enter;
+            textBox2.Leave += textBox2_Leave;
+        }
     }
+
 
 }

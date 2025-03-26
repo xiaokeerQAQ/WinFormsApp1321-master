@@ -385,24 +385,15 @@ namespace WinFormsApp1321
         }
 
 
-        public async Task<bool> ProcessFinalTestData(int timeoutMilliseconds = 60000, int checkInterval = 100)
+        public async Task<bool> ProcessFinalTestData( int checkInterval = 100)
         {
-            int elapsedTime = 0;
-
+            
             Console.WriteLine("开始等待测试数据...");
 
             // **等待数据就绪**
-            while ((aaData == null || bbData == null) && elapsedTime < timeoutMilliseconds)
+            while ((aaData == null || bbData == null))
             {
                 await Task.Delay(checkInterval);
-                elapsedTime += checkInterval;
-            }
-
-            if (elapsedTime >= timeoutMilliseconds)
-            {
-                Console.WriteLine("等待数据超时，未收到检测数据！");
-                ResetTestStatus();
-                return false;
             }
 
             // **数据到达后，检查是否第一位是 0xA0**
@@ -448,23 +439,14 @@ namespace WinFormsApp1321
         }
 
         //检测模式结果
-        public async Task<bool> ProcessFinalFormalData(int timeoutMilliseconds = 60000, int checkInterval = 100)
+        public async Task<bool> ProcessFinalFormalData( int checkInterval = 100)
         {
-            int elapsedTime = 0;
             Console.WriteLine("开始等待测试数据...");
 
             // **等待数据就绪**
-            while ((aaData == null || bbData == null) && elapsedTime < timeoutMilliseconds)
+            while ((aaData == null || bbData == null))
             {
                 await Task.Delay(checkInterval);
-                elapsedTime += checkInterval;
-            }
-
-            if (elapsedTime >= timeoutMilliseconds)
-            {
-                Console.WriteLine("等待数据超时，未收到检测数据！");
-                ResetTestStatus();
-                return false;
             }
 
             // **数据到达后，检查第一位是否是 0xA0**
