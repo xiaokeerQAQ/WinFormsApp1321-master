@@ -26,8 +26,6 @@ namespace WinFormsApp1321
         public SelectionForm()
         {
             InitializeComponent();
-            textBox3.Text = SystemFilePath;
-            textBox3.ReadOnly = true;
             CalibrationCount = ReadCalibrationCount();
             textBox2.Text = CalibrationCount.ToString();
 

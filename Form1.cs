@@ -152,14 +152,6 @@ namespace WinFormsApp1321
                                     string selectedStandardFile = selectionForm.StandardFilePath;
                                     totalCycles = selectionForm.CalibrationCount;
                                     currentCycle = 0;
-                                    /*
-                                                                    isOn1 = true;
-                                                                    button5.Enabled = false;
-                                                                    button6.Enabled = true;
-                                                                    label1.Text = "当前状态：自校准模式";
-                                                                    label6.Text = "自校准模式运行中";*/
-
-
                                     cancellationTokenSource = new CancellationTokenSource();
                                     Task.Run(() => RunCalibrationLoop(selectedStandardFile, cancellationTokenSource.Token));
 
