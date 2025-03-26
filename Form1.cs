@@ -249,8 +249,8 @@ namespace WinFormsApp1321
                 }
 
 
-                int[] stopSignal = await _plcClient.ReadDRegisterAsync(2140, 1);
-                if (stopSignal != null && stopSignal.Length > 0 && stopSignal[0] == 1)
+                int[] stopSignal = await _plcClient.ReadDRegisterAsync(2144, 2);
+                if (stopSignal != null && stopSignal.Length > 0 && stopSignal[1] == 1)
                 {
                     Console.WriteLine("检测模式手动停止...");
                     await StopDetectionAsync();
@@ -955,7 +955,7 @@ namespace WinFormsApp1321
                 button6.Enabled = true;
                 textBox2.Enabled = false;
                 button4.Enabled = false;
-
+               
                 UpdateLabel7("");
             }
             else
